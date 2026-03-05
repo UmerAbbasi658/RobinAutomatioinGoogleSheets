@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # Cache is removed to force a clean install of Google and Playwright libs
+          # CACHE REMOVED: This forces a clean, working install every time
 
       - name: Install and Run
         env:
@@ -32,12 +32,12 @@ jobs:
           # 1. Create the credentials file
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
           
-          # 2. Install all dependencies from requirements.txt in one go
+          # 2. Upgrade pip and install everything from your requirements.txt
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           
-          # 3. Ensure playwright is ready (using python -m to be safe)
+          # 3. Ensure playwright is ready using the module path
           python -m playwright install --with-deps chromium
           
-          # 4. Run the script in the same execution context
+          # 4. Run the script in the EXACT same shell environment
           python main.py
