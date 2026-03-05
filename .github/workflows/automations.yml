@@ -2,13 +2,13 @@ name: Robin Automation
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch:
+    - cron: "*/10 * * * *"  # Runs every 10 minutes to save GH Actions minutes
+  workflow_dispatch:        # Allows manual trigger from the Actions tab
 
 jobs:
   run-automation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 15     # Safety net to stop the job if it hangs
 
     steps:
       - name: Checkout repository
@@ -18,27 +18,30 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip' # Caches dependencies to speed up subsequent runs
 
-      - name: Install and Run
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # 1. Install Playwright package first
+          python -m pip install playwright
+          # 2. Install from requirements.txt (Ensure playwright is also inside this file)
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+          # 3. Install the actual chromium browser binaries
+          python -m playwright install --with-deps chromium
+
+      - name: Create Google Service Account File
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
+
+      - name: Run automation
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
-          PROPOSAL_ID: "344878"
+          PROPOSAL_ID: 344878
+          # Points to the file we just created
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-          # Create credentials file
-          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
-          
-          # Upgrade pip
-          python -m pip install --upgrade pip
-          
-          # Install requirements (ensure 'playwright' is listed here)
-          python -m pip install -r requirements.txt
-          
-          # Install browser binaries using 'python -m' to bypass PATH issues
-          python -m playwright install --with-deps chromium
-          
-          # Run script using 'python' directly
+          # Use python -m to ensure we use the environment we just set up
           python main.py
