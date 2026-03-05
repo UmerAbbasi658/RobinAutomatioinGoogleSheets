@@ -28,15 +28,17 @@ jobs:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-          # 1. Create the credentials file first
+          # Create credentials file
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
           
-          # 2. Upgrade pip and install everything in ONE step
+          # Upgrade pip
           python -m pip install --upgrade pip
+          
+          # Install requirements (ensure 'playwright' is listed here)
           python -m pip install -r requirements.txt
           
-          # 3. Force install playwright binaries
+          # Install browser binaries using 'python -m' to bypass PATH issues
           python -m playwright install --with-deps chromium
           
-          # 4. Run the script immediately in the same shell
+          # Run script using 'python' directly
           python main.py
