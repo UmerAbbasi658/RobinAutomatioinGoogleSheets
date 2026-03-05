@@ -18,20 +18,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # Cache is removed here to force a fresh, correct install
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          # Explicitly install from your requirements.txt
-          python -m pip install -r requirements.txt
-          # Ensure playwright browser binaries are ready
-          python -m playwright install --with-deps chromium
-
-      - name: Create Google Service Account File
-        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
-
-      - name: Run automation
+      - name: Install and Run
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
@@ -40,5 +28,15 @@ jobs:
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-          # Use python -m to ensure the runner uses the same environment
+          # 1. Create the credentials file first
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
+          
+          # 2. Upgrade pip and install everything in ONE step
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          
+          # 3. Force install playwright binaries
+          python -m playwright install --with-deps chromium
+          
+          # 4. Run the script immediately in the same shell
           python main.py
