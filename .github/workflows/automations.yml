@@ -2,12 +2,14 @@ name: Robin Automation
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # Running every 10 mins is safer for free tier limits
-  workflow_dispatch:
+    - cron: "*/10 * * * *"  # Runs every 10 minutes to save GH Actions minutes
+  workflow_dispatch:        # Allows manual trigger from the Actions tab
 
 jobs:
   run-automation:
     runs-on: ubuntu-latest
+    timeout-minutes: 15     # Safety net to stop the job if it hangs
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,16 +18,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
+          cache: 'pip' # Caches dependencies to speed up subsequent runs
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          # 1. Install Playwright package first
+          python -m pip install playwright
+          # 2. Install from requirements.txt (Ensure playwright is also inside this file)
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+          # 3. Install the actual chromium browser binaries
           python -m playwright install --with-deps chromium
 
       - name: Create Google Service Account File
-        # This step takes your secret string and writes it to a real file
         run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
 
       - name: Run automation
@@ -33,8 +38,10 @@ jobs:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
           PROPOSAL_ID: 344878
-          # Point the environment variable to the file we just created
+          # Points to the file we just created
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-        run: python main.py
+        run: |
+          # Use python -m to ensure we use the environment we just set up
+          python main.py
