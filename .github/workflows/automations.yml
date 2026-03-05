@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          # CACHE REMOVED: This forces a clean, working install every time
 
       - name: Install and Run
         env:
@@ -32,12 +31,17 @@ jobs:
           # 1. Create the credentials file
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' > service_account.json
           
-          # 2. Upgrade pip and install everything from your requirements.txt
+          # 2. Upgrade pip
           python -m pip install --upgrade pip
+          
+          # 3. FORCE INSTALL PLAYWRIGHT FIRST (This fixes the "No module named" error)
+          python -m pip install playwright
+          
+          # 4. Install everything else from requirements.txt (Google libs, etc.)
           python -m pip install -r requirements.txt
           
-          # 3. Ensure playwright is ready using the module path
+          # 5. Install the browser binaries
           python -m playwright install --with-deps chromium
           
-          # 4. Run the script in the EXACT same shell environment
+          # 6. Run the script
           python main.py
