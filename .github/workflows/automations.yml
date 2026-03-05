@@ -2,13 +2,13 @@ name: Robin Automation
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # Runs every 10 minutes to save GH Actions minutes
-  workflow_dispatch:        # Allows manual trigger from the Actions tab
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
 
 jobs:
   run-automation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15     # Safety net to stop the job if it hangs
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -18,16 +18,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip' # Caches dependencies to speed up subsequent runs
+          # Cache is removed here to force a fresh, correct install
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # 1. Install Playwright package first
-          python -m pip install playwright
-          # 2. Install from requirements.txt (Ensure playwright is also inside this file)
-          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
-          # 3. Install the actual chromium browser binaries
+          # Explicitly install from your requirements.txt
+          python -m pip install -r requirements.txt
+          # Ensure playwright browser binaries are ready
           python -m playwright install --with-deps chromium
 
       - name: Create Google Service Account File
@@ -37,11 +35,10 @@ jobs:
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
-          PROPOSAL_ID: 344878
-          # Points to the file we just created
+          PROPOSAL_ID: "344878"
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-          # Use python -m to ensure we use the environment we just set up
+          # Use python -m to ensure the runner uses the same environment
           python main.py
